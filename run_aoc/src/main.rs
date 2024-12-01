@@ -79,6 +79,7 @@ impl TryFrom<u8> for Part {
     fn try_from(part: u8) -> Result<Self, Self::Error> {
         match part {
             1 => Ok(Self::One),
+            2 => Ok(Self::Two),
             _ => Err(InvalidPartError(part)),
         }
     }

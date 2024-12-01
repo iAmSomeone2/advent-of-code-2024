@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
@@ -19,7 +20,7 @@ impl Day01 {
         (ids[0], ids[1])
     }
 
-    fn total_distance(&self) -> i64 {
+    fn total_distance(&self) -> u64 {
         let mut left = self.left_ids.clone();
         let mut right = self.right_ids.clone();
         left.sort_unstable();
@@ -27,19 +28,33 @@ impl Day01 {
 
         left.iter().enumerate().fold(0, |acc, (i, left_id)| {
             let right_id = right[i];
-            acc + (left_id - right_id).abs()
+            acc + (left_id - right_id).unsigned_abs()
         })
+    }
+
+    fn similarity_score(&self) -> usize {
+        let mut count_map: HashMap<i64, usize> = HashMap::new();
+        let mut score = 0;
+        for left_id in &self.left_ids {
+            let right_count = count_map.entry(*left_id).or_insert_with(|| {
+               self.right_ids.iter().filter(|id| **id == *left_id).count()
+            });
+            score += *right_count * (*left_id as usize);
+        }
+
+        score
     }
 }
 
 impl AoCDay for Day01 {
     fn part1(&self) {
         let result = self.total_distance();
-        println!("Result:\t{}", result);
+        println!("Total distance: {}", result);
     }
 
     fn part2(&self) {
-        todo!()
+        let result = self.similarity_score();
+        println!("Similarity score: {}", result);
     }
 
     fn load_input(&mut self, path: &Path) -> anyhow::Result<()> {
@@ -96,6 +111,17 @@ mod tests {
 
         let expected = 11;
         let actual = day.total_distance();
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn similarity_score_test() {
+        let mut day = Day01::default();
+        day.load_input(&EXAMPLE_PATH).unwrap();
+
+        let expected = 31;
+        let actual = day.similarity_score();
 
         assert_eq!(expected, actual);
     }
