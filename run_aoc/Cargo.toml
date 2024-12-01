@@ -1,0 +1,12 @@
+[package]
+name = "run_aoc"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "run-aoc"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.5.21", features = ["derive"] }
+day01 = { path = "../day01" }
