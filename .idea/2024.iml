@@ -2,6 +2,7 @@
 <module type="EMPTY_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/aoc_day/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/day01/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/run_aoc/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />

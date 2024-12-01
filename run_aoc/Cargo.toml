@@ -9,4 +9,6 @@ path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4.5.21", features = ["derive"] }
+runner = { path = "../aoc_day" }
 day01 = { path = "../day01" }
+anyhow = "1.0.93"

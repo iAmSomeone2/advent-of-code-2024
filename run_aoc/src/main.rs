@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use clap::Parser;
+use runner::AoCDay;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 struct InvalidDayError(u8);
@@ -45,6 +46,12 @@ impl Day {
         let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../inputs").canonicalize().unwrap();
         match self {
             Self::One => root.join("day01.txt")
+        }
+    }
+
+    fn get_aoc_day(&self) -> Box<dyn AoCDay> {
+        match self {
+            Self::One => Box::new(day01::Day01::default())
         }
     }
 }
@@ -95,25 +102,19 @@ struct RunConfig {
 }
 
 impl RunConfig {
-    fn load_text_input(&self) -> std::io::Result<String> {
-        let input_path = self.day.get_input_path();
-        std::fs::read_to_string(input_path)
-    }
-
-    fn run(&self) -> std::io::Result<()> {
+    fn run(&self) -> anyhow::Result<()> {
         println!("{}", self);
 
-        let input = self.load_text_input()?;
-        match self.day {
-            Day::One => {
-                match self.part {
-                    Part::One => {
-                        day01::part1(&input);
-                    },
-                    Part::Two => {
-                        todo!();
-                    }
-                }
+        let mut aoc_day = self.day.get_aoc_day();
+        let input_path = self.day.get_input_path();
+        aoc_day.load_input(&input_path)?;
+        
+        match self.part {
+            Part::One => {
+                aoc_day.part1();
+            },
+            Part::Two => {
+                aoc_day.part2();
             }
         }
 
@@ -127,7 +128,7 @@ impl std::fmt::Display for RunConfig {
     }
 }
 
-/// Advent of Code 2024 runner
+/// Advent of Code 2024 aoc_day
 #[derive(Parser, Debug)]
 #[command(about, long_about = None)]
 struct Args {
