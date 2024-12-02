@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
-use runner::AoCDay;
+use aoc_day::AoCDay;
 
 #[derive(Default)]
 pub struct Day01 {

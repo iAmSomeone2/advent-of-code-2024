@@ -1,5 +1,5 @@
 [package]
-name = "runner"
+name = "aoc_day"
 version = "0.1.0"
 edition = "2021"
 

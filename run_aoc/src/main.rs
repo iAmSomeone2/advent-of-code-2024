@@ -1,6 +1,6 @@
-use std::path::PathBuf;
+use aoc_day::AoCDay;
 use clap::Parser;
-use runner::AoCDay;
+use std::path::PathBuf;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 struct InvalidDayError(u8);
@@ -15,7 +15,8 @@ impl std::error::Error for InvalidDayError {}
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 enum Day {
-    One
+    One,
+    Two,
 }
 
 impl TryFrom<u8> for Day {
@@ -24,6 +25,7 @@ impl TryFrom<u8> for Day {
     fn try_from(day: u8) -> Result<Self, Self::Error> {
         match day {
             1 => Ok(Day::One),
+            2 => Ok(Day::Two),
             _ => Err(InvalidDayError(day)),
         }
     }
@@ -43,15 +45,20 @@ impl std::fmt::Display for Day {
 
 impl Day {
     fn get_input_path(&self) -> PathBuf {
-        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../inputs").canonicalize().unwrap();
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../inputs")
+            .canonicalize()
+            .unwrap();
         match self {
-            Self::One => root.join("day01.txt")
+            Self::One => root.join("day01.txt"),
+            Self::Two => root.join("day02.txt"),
         }
     }
 
     fn get_aoc_day(&self) -> Box<dyn AoCDay> {
         match self {
-            Self::One => Box::new(day01::Day01::default())
+            Self::One => Box::new(day01::Day01::default()),
+            Self::Two => Box::new(day02::Day02::default()),
         }
     }
 }
@@ -109,11 +116,11 @@ impl RunConfig {
         let mut aoc_day = self.day.get_aoc_day();
         let input_path = self.day.get_input_path();
         aoc_day.load_input(&input_path)?;
-        
+
         match self.part {
             Part::One => {
                 aoc_day.part1();
-            },
+            }
             Part::Two => {
                 aoc_day.part2();
             }
@@ -125,11 +132,20 @@ impl RunConfig {
 
 impl std::fmt::Display for RunConfig {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "==========\n{}\n{}\n==========", self.day, self.part)
+        write!(
+            f,
+            "Advent of Code 2024\n\
+            ==========\
+            \n{}\
+            \n{}\
+            \n\
+            ==========",
+            self.day, self.part
+        )
     }
 }
 
-/// Advent of Code 2024 aoc_day
+/// Advent of Code 2024 runner
 #[derive(Parser, Debug)]
 #[command(about, long_about = None)]
 struct Args {
@@ -148,7 +164,7 @@ fn main() {
         Err(err) => {
             eprintln!("{}", err);
             std::process::exit(1);
-        },
+        }
     };
 
     let part: Part = match cli.part.try_into() {
@@ -159,10 +175,7 @@ fn main() {
         }
     };
 
-    let run_config = RunConfig {
-        day,
-        part,
-    };
+    let run_config = RunConfig { day, part };
 
     match run_config.run() {
         Ok(()) => std::process::exit(0),

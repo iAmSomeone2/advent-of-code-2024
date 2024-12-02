@@ -5,6 +5,7 @@
       <sourceFolder url="file://$MODULE_DIR$/aoc_day/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/day01/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/run_aoc/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/day02/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
