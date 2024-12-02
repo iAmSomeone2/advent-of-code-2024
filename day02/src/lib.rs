@@ -48,23 +48,42 @@ impl Report {
     ///
     /// A single "bad" level may be removed in this implementation
     fn is_safe_dampened(&self) -> bool {
-        let diffs = self
-            .levels
-            .windows(2)
-            .map(|w| w[1] - w[0])
-            .collect::<Vec<_>>();
-
-        let all_decreasing = diffs.iter().all(|val| *val < 0);
-        let all_increasing = diffs.iter().all(|val| *val > 0);
-
-        if !all_decreasing && !all_increasing {
-            return false;
+        if self.is_safe() {
+            return true;
         }
 
-        diffs
-            .iter()
-            .map(|val| val.unsigned_abs())
-            .all(|val| (1..=3).contains(&val))
+        for i in 0..self.levels.len() {
+            let mut dampened_levels = Vec::with_capacity(self.levels.len() - 1);
+            // Clone first slice
+            dampened_levels.extend_from_slice(&self.levels[..i]);
+            // Clone second slice
+            dampened_levels.extend_from_slice(&self.levels[i + 1..]);
+
+            assert_eq!(dampened_levels.len(), self.levels.len() - 1);
+
+            let diffs = dampened_levels
+                .windows(2)
+                .map(|w| w[1] - w[0])
+                .collect::<Vec<_>>();
+
+            let all_decreasing = diffs.iter().all(|val| *val < 0);
+            let all_increasing = diffs.iter().all(|val| *val > 0);
+
+            if !all_decreasing && !all_increasing {
+                continue;
+            }
+
+            let is_safe = diffs
+                .iter()
+                .map(|val| val.unsigned_abs())
+                .all(|val| (1..=3).contains(&val));
+
+            if is_safe {
+                return true;
+            }
+        }
+
+        false
     }
 }
 
@@ -80,6 +99,13 @@ impl Day02 {
             .filter(|report| report.is_safe())
             .count()
     }
+
+    fn count_safe_reports2(&self) -> usize {
+        self.reports
+            .iter()
+            .filter(|report| report.is_safe_dampened())
+            .count()
+    }
 }
 
 impl AoCDay for Day02 {
@@ -89,7 +115,8 @@ impl AoCDay for Day02 {
     }
 
     fn part2(&self) {
-        todo!()
+        let result = self.count_safe_reports2();
+        println!("Safe reports: {}", result);
     }
 
     fn load_input(&mut self, path: &Path) -> anyhow::Result<()> {
@@ -131,6 +158,17 @@ mod tests {
 
         let expected = 2;
         let actual = day.count_safe_reports();
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn count_safe_reports2() {
+        let mut day = Day02::default();
+        day.load_input(&EXAMPLE_PATH).unwrap();
+
+        let expected = 4;
+        let actual = day.count_safe_reports2();
 
         assert_eq!(expected, actual);
     }
