@@ -17,6 +17,7 @@ impl std::error::Error for InvalidDayError {}
 enum Day {
     One,
     Two,
+    Three,
 }
 
 impl TryFrom<u8> for Day {
@@ -26,6 +27,7 @@ impl TryFrom<u8> for Day {
         match day {
             1 => Ok(Day::One),
             2 => Ok(Day::Two),
+            3 => Ok(Day::Three),
             _ => Err(InvalidDayError(day)),
         }
     }
@@ -52,6 +54,7 @@ impl Day {
         match self {
             Self::One => root.join("day01.txt"),
             Self::Two => root.join("day02.txt"),
+            Self::Three => root.join("day03.txt"),
         }
     }
 
@@ -59,6 +62,7 @@ impl Day {
         match self {
             Self::One => Box::new(day01::Day01::default()),
             Self::Two => Box::new(day02::Day02::default()),
+            Self::Three => Box::new(day03::Day03::default()),
         }
     }
 }
