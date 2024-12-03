@@ -1,10 +1,17 @@
 use aoc_day::AoCDay;
+use std::fmt::Debug;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::str::FromStr;
 
-#[derive(Default)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+enum Direction {
+    Increasing,
+    Decreasing,
+}
+
+#[derive(Default, Clone)]
 struct Report {
     levels: Vec<i64>,
 }
@@ -23,62 +30,57 @@ impl FromStr for Report {
 }
 
 impl Report {
-    /// Checks if a report is "safe" per the instructions in Day 02 - Part 1
-    fn is_safe(&self) -> bool {
-        let diffs = self
-            .levels
-            .windows(2)
-            .map(|w| w[1] - w[0])
-            .collect::<Vec<_>>();
+    fn levels_are_safe(levels: &[i64]) -> bool {
+        let mut index = 0;
+        let mut prev_direction: Option<Direction> = None;
+        for pair in levels.windows(2) {
+            let val0 = (pair[0], index);
+            let val1 = (pair[1], index + 1);
+            let diff = val1.0 - val0.0;
 
-        let all_decreasing = diffs.iter().all(|val| *val < 0);
-        let all_increasing = diffs.iter().all(|val| *val > 0);
+            let direction = if diff >= 0 {
+                Direction::Increasing
+            } else {
+                Direction::Decreasing
+            };
 
-        if !all_decreasing && !all_increasing {
-            return false;
+            if !(1..=3).contains(&diff.unsigned_abs()) {
+                return false;
+            }
+
+            if let Some(prev_dir) = prev_direction {
+                if direction != prev_dir {
+                    return false;
+                }
+            }
+
+            prev_direction = Some(direction);
+            index += 1;
         }
 
-        diffs
-            .iter()
-            .map(|val| val.unsigned_abs())
-            .all(|val| (1..=3).contains(&val))
+        true
+    }
+
+    /// Checks if a report is "safe" per the instructions in Day 02 - Part 1
+    fn is_safe(&self) -> bool {
+        Report::levels_are_safe(&self.levels)
     }
 
     /// Checks if a report is "safe" per the instructions in Day 02 - Part 2
     ///
     /// A single "bad" level may be removed in this implementation
     fn is_safe_dampened(&self) -> bool {
-        if self.is_safe() {
+        if Report::levels_are_safe(&self.levels) {
             return true;
-        }
+        };
 
+        let mut dampened_levels = Vec::with_capacity(self.levels.len() - 1);
         for i in 0..self.levels.len() {
-            let mut dampened_levels = Vec::with_capacity(self.levels.len() - 1);
-            // Clone first slice
+            dampened_levels.clear();
             dampened_levels.extend_from_slice(&self.levels[..i]);
-            // Clone second slice
             dampened_levels.extend_from_slice(&self.levels[i + 1..]);
 
-            assert_eq!(dampened_levels.len(), self.levels.len() - 1);
-
-            let diffs = dampened_levels
-                .windows(2)
-                .map(|w| w[1] - w[0])
-                .collect::<Vec<_>>();
-
-            let all_decreasing = diffs.iter().all(|val| *val < 0);
-            let all_increasing = diffs.iter().all(|val| *val > 0);
-
-            if !all_decreasing && !all_increasing {
-                continue;
-            }
-
-            let is_safe = diffs
-                .iter()
-                .map(|val| val.unsigned_abs())
-                .all(|val| (1..=3).contains(&val));
-
-            if is_safe {
+            if Report::levels_are_safe(&dampened_levels) {
                 return true;
             }
         }
@@ -87,24 +89,33 @@ impl Report {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Day02 {
     reports: Vec<Report>,
 }
 
 impl Day02 {
-    fn count_safe_reports(&self) -> usize {
-        self.reports
-            .iter()
-            .filter(|report| report.is_safe())
-            .count()
+    pub fn count_safe_reports(&self) -> usize {
+        self.reports.iter().fold(
+            0,
+            |acc, report| {
+                if report.is_safe() {
+                    acc + 1
+                } else {
+                    acc
+                }
+            },
+        )
     }
 
-    fn count_safe_reports2(&self) -> usize {
-        self.reports
-            .iter()
-            .filter(|report| report.is_safe_dampened())
-            .count()
+    pub fn count_safe_reports2(&self) -> usize {
+        self.reports.iter().fold(0, |acc, report| {
+            if report.is_safe_dampened() {
+                acc + 1
+            } else {
+                acc
+            }
+        })
     }
 }
 
