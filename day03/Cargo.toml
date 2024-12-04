@@ -6,4 +6,5 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.94"
 aoc_day = { path = "../aoc_day" }
+nom = "7.1.3"
 regex = "1.11.1"

@@ -4,7 +4,7 @@ use aoc_day::AoCDay;
 use regex::{Regex, RegexBuilder};
 
 static INSTRUCTION_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    RegexBuilder::new(r"(?P<instruction>mul)\((?P<args>(?:\d+,*)*)\)")
+    RegexBuilder::new(r"(?:(?P<name>(?:mul|do|don't))\((?P<args>(?:\d+,*)*)\))")
         .case_insensitive(true)
         .build()
         .expect("MUL_REGEX failed to compile")
@@ -12,7 +12,9 @@ static INSTRUCTION_REGEX: LazyLock<Regex> = LazyLock::new(|| {
 
 #[derive(Debug, PartialEq, Eq)]
 enum Instruction {
-    Mul(Vec<u64>),
+    Mul(u64, u64),
+    Do,
+    Dont
 }
 
 impl Instruction {
@@ -21,20 +23,25 @@ impl Instruction {
 
         regex_captures
             .map(|captures| {
-                let mut ins = match &captures["instruction"] {
-                    "mul" => Instruction::Mul(vec![]),
+                let ins = &captures["name"];
+                let mut ins = match ins {
+                    "mul" => Instruction::Mul(0, 0),
+                    "do" => Instruction::Do,
+                    "don't" => Instruction::Dont,
                     _ => panic!("Unexpected instruction"),
                 };
 
                 match ins {
-                    Instruction::Mul(ref mut args) => {
-                        let mut parsed_args = (&captures["args"])
+                    Instruction::Mul(ref mut arg0, ref mut arg1) => {
+                        let parsed_args = (&captures["args"])
                             .split(',')
                             .filter_map(|arg| u64::from_str_radix(arg, 10).ok())
                             .collect::<Vec<_>>();
 
-                        args.append(&mut parsed_args);
-                    }
+                        *arg0 = parsed_args[0];
+                        *arg1 = parsed_args[1];
+                    },
+                    _ => {},
                 }
 
                 ins
@@ -44,10 +51,10 @@ impl Instruction {
 
     fn execute(&self) -> Option<u64> {
         match self {
-            Self::Mul(args) => {
-                let product: u64 = args.iter().fold(1, |acc, elem| acc * (*elem));
-                Some(product)
-            }
+            Self::Mul(arg0, arg1) => {
+                Some(arg0 * arg1)
+            },
+            _ => None,
         }
     }
 }
@@ -62,7 +69,7 @@ impl Day03 {
         self.instructions
             .iter()
             .filter(|ins| match ins {
-                Instruction::Mul(_) => true,
+                Instruction::Mul(..) => true,
                 _ => false,
             })
             .fold(0, |acc, ins| acc + ins.execute().unwrap_or(0))
@@ -88,6 +95,87 @@ impl AoCDay for Day03 {
     }
 }
 
+mod parse {
+    use nom::{branch::alt, bytes::complete::{is_not, tag, take_till, take_while}, character::complete::{alphanumeric1, char}, multi::many1, sequence::{delimited, pair, preceded, terminated}, IResult};
+
+    use crate::Instruction;
+
+    fn mul_instruction(i: &str) -> IResult<&str, Instruction> {
+        let parse_arg0 = terminated(alphanumeric1, char(','));
+        let parse_pair = pair(parse_arg0, alphanumeric1);
+
+        let (remainder, output) = delimited(tag("mul("), parse_pair, tag(")"))(i)?;
+
+        let arg0: u64 = match output.0.parse() {
+            Ok(num) => num,
+            Err(err) => {
+                panic!("{err}");
+            }
+        };
+        let arg1: u64 = match output.1.parse() {
+            Ok(num) => num,
+            Err(err) => {
+                panic!("{err}");
+            }
+        };
+
+        Ok((remainder, Instruction::Mul(arg0, arg1)))
+    }
+
+    fn do_instruction(i: &str) -> IResult<&str, Instruction> {
+        let (remainder, _) = tag("do()")(i)?;
+
+        Ok((remainder, Instruction::Do))
+    }
+
+    fn dont_instruction(i: &str) -> IResult<&str, Instruction> {
+        let (remainder, _) = tag(r"don't()")(i)?;
+
+        Ok((remainder, Instruction::Dont))
+    }
+
+    pub fn instructions(i: &str) -> IResult<&str, Vec<Instruction>> {
+        let instruction = alt((mul_instruction, do_instruction, dont_instruction));
+
+        todo!()
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn mul_instruction_test() {
+            let input = "mul(1,2)q";
+
+            let actual = mul_instruction(input).unwrap();
+            let expected = ("q", Instruction::Mul(1, 2));
+
+            assert_eq!(actual, expected);
+        }
+
+        #[test]
+        fn do_instruction_test() {
+            let input = "do()124";
+
+            let actual = do_instruction(input).unwrap();
+            let expected = ("124", Instruction::Do);
+
+            assert_eq!(actual, expected);
+        }
+
+        #[test]
+        fn dont_instruction_test() {
+            let input = "don't()124";
+
+            let actual = dont_instruction(input).unwrap();
+            let expected = ("124", Instruction::Dont);
+
+            assert_eq!(actual, expected);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
@@ -102,10 +190,12 @@ mod tests {
     #[test]
     fn parse_instructions_test() {
         let expected = vec![
-            Instruction::Mul(vec![2, 4]),
-            Instruction::Mul(vec![5, 5]),
-            Instruction::Mul(vec![11, 8]),
-            Instruction::Mul(vec![8, 5]),
+            Instruction::Mul(2, 4),
+            Instruction::Dont,
+            Instruction::Mul(5, 5),
+            Instruction::Mul(11, 8),
+            Instruction::Do,
+            Instruction::Mul(8, 5),
         ];
 
         let actual = Instruction::parse_instructions(EXAMPLE_INPUT);
