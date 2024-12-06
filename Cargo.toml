@@ -5,4 +5,4 @@ members = [
   "run_aoc",
   "aoc_day",
   "day01"
-, "day02", "day03"]
+, "day02", "day03", "day04"]

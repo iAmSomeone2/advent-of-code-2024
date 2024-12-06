@@ -13,4 +13,5 @@ aoc_day = { path = "../aoc_day" }
 day01 = { path = "../day01" }
 day02 = { path = "../day02" }
 day03 = { path = "../day03" }
+day04 = { path = "../day04" }
 anyhow = "1.0.93"
