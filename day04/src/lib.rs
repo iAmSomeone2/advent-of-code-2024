@@ -1,9 +1,18 @@
 use std::collections::HashSet;
+use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
 struct Match {
     positions: [(usize, usize); 4],
+}
+
+impl Hash for Match {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.positions
+            .iter()
+            .for_each(|pos| state.write_usize(pos.0 ^ pos.1));
+    }
 }
 
 struct Crossword {
@@ -28,12 +37,17 @@ impl Crossword {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::hash::DefaultHasher;
 
     const EXAMPLE_INPUT: &str = include_str!("../example_input.txt");
 
     #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+    fn hash_match() {
+        let mut cross_match = Match::default();
+        let mut hasher = DefaultHasher::new();
+        cross_match.hash(&mut hasher);
+
+        let hash = hasher.finish();
+        assert_ne!(hash, 0);
     }
 }

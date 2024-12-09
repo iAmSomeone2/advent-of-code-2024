@@ -42,17 +42,29 @@ impl OrderingRules {
     }
 
     fn order(&self, left: u32, right: u32) -> Ordering {
-        match self.order_map.get(&right) {
+        match self.order_map.get(&left) {
             Some(rule) => {
                 if rule.greater_than.contains(&right) {
                     Ordering::Greater
-                } else if rule.less_than.contains(&left) {
+                } else if rule.less_than.contains(&right) {
                     Ordering::Less
                 } else {
                     Ordering::Equal
                 }
             }
-            None => Ordering::Equal,
+            // No rule for left side, so use right side
+            None => match self.order_map.get(&right) {
+                Some(rule) => {
+                    if rule.greater_than.contains(&left) {
+                        Ordering::Less
+                    } else if rule.less_than.contains(&left) {
+                        Ordering::Greater
+                    } else {
+                        Ordering::Equal
+                    }
+                }
+                None => Ordering::Equal,
+            },
         }
     }
 }
@@ -93,7 +105,8 @@ impl Day05 {
 
 impl AoCDay for Day05 {
     fn part1(&self) {
-        todo!()
+        let sum = self.sum_middle_numbers();
+        println!("Sum of middle numbers: {}", sum);
     }
 
     fn part2(&self) {
@@ -117,6 +130,18 @@ mod tests {
     use super::*;
 
     const TEST_INPUT: &str = include_str!("../example_input.txt");
+
+    #[test]
+    fn update_is_sorted() {
+        let (rules, updates) = parse::rules_and_updates(TEST_INPUT);
+
+        let expected_sort = [true, true, true, false, false, false];
+
+        for (idx, update) in updates.iter().enumerate() {
+            let actual_sort = update.is_sorted(&rules);
+            assert_eq!(expected_sort[idx], actual_sort, "Failed idx: {}", idx);
+        }
+    }
 
     #[test]
     fn part1_test() {

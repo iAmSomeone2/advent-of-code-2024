@@ -18,6 +18,8 @@ enum Day {
     One,
     Two,
     Three,
+    Four,
+    Five,
 }
 
 impl TryFrom<u8> for Day {
@@ -28,6 +30,7 @@ impl TryFrom<u8> for Day {
             1 => Ok(Day::One),
             2 => Ok(Day::Two),
             3 => Ok(Day::Three),
+            5 => Ok(Day::Five),
             _ => Err(InvalidDayError(day)),
         }
     }
@@ -36,6 +39,12 @@ impl TryFrom<u8> for Day {
 impl From<Day> for u8 {
     fn from(day: Day) -> Self {
         (day as u8) + 1
+    }
+}
+
+impl From<&Day> for u8 {
+    fn from(day: &Day) -> Self {
+        (*day as u8) + 1
     }
 }
 
@@ -51,11 +60,18 @@ impl Day {
             .join("../inputs")
             .canonicalize()
             .unwrap();
-        match self {
-            Self::One => root.join("day01.txt"),
-            Self::Two => root.join("day02.txt"),
-            Self::Three => root.join("day03.txt"),
-        }
+
+        let day_num: u8 = self.into();
+        let txt_name = format!("day{:02}", day_num);
+
+        root.join(&txt_name).with_extension("txt")
+        // match self {
+        //     Self::One => root.join("day01.txt"),
+        //     Self::Two => root.join("day02.txt"),
+        //     Self::Three => root.join("day03.txt"),
+        //     Self::Four => root.join("day04.txt"),
+        //     Self::Five => root.join("day05.txt"),
+        // }
     }
 
     fn get_aoc_day(&self) -> Box<dyn AoCDay> {
@@ -63,6 +79,8 @@ impl Day {
             Self::One => Box::new(day01::Day01::default()),
             Self::Two => Box::new(day02::Day02::default()),
             Self::Three => Box::new(day03::Day03::default()),
+            Self::Five => Box::new(day05::Day05::default()),
+            _ => panic!("Day not implemented yet"),
         }
     }
 }

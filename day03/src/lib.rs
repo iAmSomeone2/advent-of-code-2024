@@ -8,8 +8,6 @@ use std::{fs, sync::LazyLock};
 use aoc_day::AoCDay;
 use regex::{Regex, RegexBuilder};
 
-// const INPUT: &str = include_str!("../../inputs/day03.txt");
-
 static INSTRUCTION_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     RegexBuilder::new(r"(?:(?P<name>(?:mul|do|don't))\((?P<args>(?:\d+,*)*)\))")
         .case_insensitive(true)
@@ -32,37 +30,6 @@ enum InstructionResult {
 }
 
 impl Instruction {
-    fn parse_instructions(input: &str) -> Vec<Instruction> {
-        let regex_captures = INSTRUCTION_REGEX.captures_iter(input);
-
-        regex_captures
-            .map(|captures| {
-                let ins = &captures["name"];
-                let mut ins = match ins {
-                    "mul" => Instruction::Mul(0, 0),
-                    "do" => Instruction::Do,
-                    "don't" => Instruction::Dont,
-                    _ => panic!("Unexpected instruction"),
-                };
-
-                match ins {
-                    Instruction::Mul(ref mut arg0, ref mut arg1) => {
-                        let parsed_args = (&captures["args"])
-                            .split(',')
-                            .filter_map(|arg| u64::from_str_radix(arg, 10).ok())
-                            .collect::<Vec<_>>();
-
-                        *arg0 = parsed_args[0];
-                        *arg1 = parsed_args[1];
-                    }
-                    _ => {}
-                }
-
-                ins
-            })
-            .collect::<Vec<Instruction>>()
-    }
-
     fn execute(&self) -> InstructionResult {
         match self {
             Self::Mul(arg0, arg1) => InstructionResult::Product(arg0 * arg1),
@@ -81,10 +48,7 @@ impl Day03 {
     pub fn sum_mults(&self) -> u64 {
         self.instructions
             .iter()
-            .filter(|ins| match ins {
-                Instruction::Mul(..) => true,
-                _ => false,
-            })
+            .filter(|ins| matches!(ins, Instruction::Mul(..)))
             .fold(0, |acc, ins| match ins.execute() {
                 InstructionResult::Product(res) => acc + res,
                 _ => acc,
