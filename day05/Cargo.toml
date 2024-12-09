@@ -3,7 +3,12 @@ name = "day05"
 version = "0.1.0"
 edition = "2021"
 
+[[bench]]
+harness = false
+name = "day05"
+
 [dependencies]
 anyhow = "1.0.94"
 aoc_day = { path = "../aoc_day" }
+criterion = "0.5.1"
 nom = "7.1.3"
