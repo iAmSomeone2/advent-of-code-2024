@@ -1,5 +1,8 @@
 use std::collections::HashSet;
+use std::fmt::Display;
 use std::str::FromStr;
+
+type Position = (usize, usize);
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 enum Direction {
@@ -24,14 +27,14 @@ impl TryFrom<char> for Direction {
 }
 
 struct Guard {
-    current_position: (usize, usize),
+    current_position: Position,
     direction: Direction,
     traveled_distance: u64,
-    distinct_positions: HashSet<(usize, usize)>,
+    distinct_positions: HashSet<Position>,
 }
 
 impl Guard {
-    fn new(position: (usize, usize), direction: Direction) -> Self {
+    fn new(position: Position, direction: Direction) -> Self {
         Self {
             current_position: position,
             direction,
@@ -49,7 +52,67 @@ impl Guard {
         };
     }
 
-    fn move_to(&mut self, obstacle: &Obstacle) {}
+    fn move_to(&mut self, obstacle: &Option<Obstacle>, max_width: usize, max_height: usize) {
+        let (cur_x, cur_y) = self.current_position;
+        let (final_position, visited_cells): (Position, Vec<Position>) = match self.direction {
+            Direction::North => {
+                let target_pos = if let Some(obstacle) = obstacle {
+                    (cur_x, obstacle.position.1 + 1)
+                } else {
+                    (cur_x, 0)
+                };
+                let visited_cells = (target_pos.1..self.current_position.1)
+                    .map(|y| (cur_x, y))
+                    .collect();
+
+                (target_pos, visited_cells)
+            }
+            Direction::East => {
+                let target_pos = if let Some(obstacle) = obstacle {
+                    (obstacle.position.0 - 1, cur_y)
+                } else {
+                    (max_width, cur_y)
+                };
+                let visited_cells = (self.current_position.0 + 1..=target_pos.0)
+                    .map(|x| (x, cur_y))
+                    .collect();
+
+                (target_pos, visited_cells)
+            }
+            Direction::South => {
+                let target_pos = if let Some(obstacle) = obstacle {
+                    (cur_x, obstacle.position.1 - 1)
+                } else {
+                    (cur_x, max_height)
+                };
+
+                let visited_cells = (self.current_position.1 + 1..=target_pos.1)
+                    .map(|y| (cur_x, y))
+                    .collect();
+
+                (target_pos, visited_cells)
+            }
+            Direction::West => {
+                let target_pos = if let Some(obstacle) = obstacle {
+                    (obstacle.position.0 + 1, cur_y)
+                } else {
+                    (0, cur_y)
+                };
+                let visited_cells = (target_pos.0..self.current_position.0)
+                    .map(|x| (x, cur_y))
+                    .collect();
+
+                (target_pos, visited_cells)
+            }
+        };
+
+        let distance_traveled = visited_cells.len();
+        for cell in visited_cells {
+            self.distinct_positions.insert(cell);
+        }
+        self.current_position = final_position;
+        self.traveled_distance += distance_traveled as u64;
+    }
 
     /// Casts a "ray" from the [Guard]'s current position and [Direction].
     ///
@@ -59,29 +122,24 @@ impl Guard {
     /// hit is returned.
     fn cast_ray(&self, obstacles: &[Obstacle]) -> Option<Obstacle> {
         let (cur_x, cur_y) = self.current_position;
+        let obstacle_iter = obstacles.iter();
 
-        match self.direction {
-            Direction::North => obstacles
-                .iter()
-                .filter(|obs| obs.position.1 < cur_y)
-                .max_by_key(|obs| obs.position.1)
-                .cloned(),
-            Direction::East => obstacles
-                .iter()
-                .filter(|obs| obs.position.0 > cur_x)
-                .min_by_key(|obs| obs.position.0)
-                .cloned(),
-            Direction::South => obstacles
-                .iter()
-                .filter(|obs| obs.position.1 > cur_y)
-                .min_by_key(|obs| obs.position.1)
-                .cloned(),
-            Direction::West => obstacles
-                .iter()
-                .filter(|obs| obs.position.0 < cur_x)
-                .max_by_key(|obs| obs.position.0)
-                .cloned(),
-        }
+        let hit = match self.direction {
+            Direction::North => obstacle_iter
+                .filter(|obs| obs.position.1 < cur_y && obs.position.0 == cur_x)
+                .max_by_key(|obs| obs.position.1),
+            Direction::East => obstacle_iter
+                .filter(|obs| obs.position.0 > cur_x && obs.position.1 == cur_y)
+                .min_by_key(|obs| obs.position.0),
+            Direction::South => obstacle_iter
+                .filter(|obs| obs.position.1 > cur_y && obs.position.0 == cur_x)
+                .min_by_key(|obs| obs.position.1),
+            Direction::West => obstacle_iter
+                .filter(|obs| obs.position.0 < cur_x && obs.position.1 == cur_y)
+                .max_by_key(|obs| obs.position.0),
+        };
+
+        hit.cloned()
     }
 
     /// Patrols forward until encountering an obstacle or exiting the patrol area
@@ -90,7 +148,7 @@ impl Guard {
     ///
     /// `true` is returned if the [Guard] encountered an [Obstacle] and is still in the grid at the
     /// end of this move; `false`, otherwise.
-    fn patrol(&mut self, obstacles: &[Obstacle]) -> bool {
+    fn patrol(&mut self, obstacles: &[Obstacle], max_width: usize, max_height: usize) -> bool {
         todo!()
     }
 }
@@ -101,14 +159,14 @@ impl Guard {
    of time. Instead, only the guard and obstacles need to be tracked.
 
    When using raycasting for collision detection, filter the list of obstacles down to only what is
-   directly in front of the guard. Then, find the closest obstacle for the given direction possibly
-   using something like `min_by`.
+   directly in front of the guard. Then, find the closest obstacle for the given direction
+   using `min_by_key` and `max_by_key`.
 */
 
 /// An object in the [PatrolArea] which the [Guard] may collide with
 #[derive(Copy, Clone)]
 struct Obstacle {
-    position: (usize, usize),
+    position: Position,
 }
 
 impl Obstacle {
@@ -117,7 +175,7 @@ impl Obstacle {
     }
 }
 
-struct PatrolArea {
+pub struct PatrolArea {
     guard: Guard,
     obstacles: Vec<Obstacle>,
     width: usize,
@@ -129,7 +187,7 @@ impl FromStr for PatrolArea {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut guard_dir: Option<Direction> = None;
-        let mut guard_pos: Option<(usize, usize)> = None;
+        let mut guard_pos: Option<Position> = None;
         let mut width = 0;
         let mut height = 0;
         let mut obstacles = Vec::new();
@@ -166,6 +224,33 @@ impl FromStr for PatrolArea {
             width,
             height,
         })
+    }
+}
+
+#[derive(Default, Debug, Copy, Clone)]
+enum CellContents {
+    #[default]
+    Empty,
+    Obstacle,
+    Guard,
+}
+
+impl Display for PatrolArea {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut cell_contents = vec![vec![CellContents::default(); self.width]; self.height];
+
+        let guard_pos = self.guard.current_position;
+        cell_contents[guard_pos.1][guard_pos.0] = CellContents::Guard;
+        for obs_pos in self.obstacles.iter().map(|obs| obs.position) {
+            cell_contents[obs_pos.1][obs_pos.0] = CellContents::Obstacle;
+        }
+
+        let mut display_buf = String::new();
+        for (y, row) in cell_contents.iter().enumerate() {
+            for (x, cell) in row.iter().enumerate() {}
+        }
+
+        write!(f, "")
     }
 }
 
