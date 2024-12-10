@@ -8,11 +8,12 @@ name = "run-aoc"
 path = "src/main.rs"
 
 [dependencies]
-clap = { version = "4.5.21", features = ["derive"] }
+clap = { version = "~4.5", features = ["derive"] }
 aoc_day = { path = "../aoc_day" }
 day01 = { path = "../day01" }
 day02 = { path = "../day02" }
 day03 = { path = "../day03" }
 day04 = { path = "../day04" }
 day05 = { path = "../day05" }
-anyhow = "1.0.93"
+day06 = { path = "../day06" }
+anyhow = "~1"

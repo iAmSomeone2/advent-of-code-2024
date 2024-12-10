@@ -20,6 +20,7 @@ enum Day {
     Three,
     Four,
     Five,
+    Six,
 }
 
 impl TryFrom<u8> for Day {
@@ -31,6 +32,7 @@ impl TryFrom<u8> for Day {
             2 => Ok(Day::Two),
             3 => Ok(Day::Three),
             5 => Ok(Day::Five),
+            6 => Ok(Day::Six),
             _ => Err(InvalidDayError(day)),
         }
     }
@@ -65,13 +67,6 @@ impl Day {
         let txt_name = format!("day{:02}", day_num);
 
         root.join(&txt_name).with_extension("txt")
-        // match self {
-        //     Self::One => root.join("day01.txt"),
-        //     Self::Two => root.join("day02.txt"),
-        //     Self::Three => root.join("day03.txt"),
-        //     Self::Four => root.join("day04.txt"),
-        //     Self::Five => root.join("day05.txt"),
-        // }
     }
 
     fn get_aoc_day(&self) -> Box<dyn AoCDay> {
