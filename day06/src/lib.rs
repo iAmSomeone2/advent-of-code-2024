@@ -49,52 +49,39 @@ impl Guard {
         };
     }
 
+    fn move_to(&mut self, obstacle: &Obstacle) {}
+
     /// Casts a "ray" from the [Guard]'s current position and [Direction].
     ///
     /// # Return
     ///
     /// If the "ray" hits an [Obstacle] before exiting the [PatrolArea], then the position of the
     /// hit is returned.
-    fn cast_ray(&self, grid: &Grid<bool>) -> Option<(usize, usize)> {
+    fn cast_ray(&self, obstacles: &[Obstacle]) -> Option<Obstacle> {
         let (cur_x, cur_y) = self.current_position;
-        let (max_x, max_y) = (grid.width, grid.height);
 
         match self.direction {
-            Direction::North => {
-                let x = cur_x;
-                for y in (0..cur_y).rev() {
-                    if *grid.get(x, y).unwrap() {
-                        return Some((x, y));
-                    }
-                }
-            }
-            Direction::East => {
-                let y = cur_y;
-                for x in cur_x + 1..max_x {
-                    if *grid.get(x, y).unwrap() {
-                        return Some((x, y));
-                    }
-                }
-            }
-            Direction::South => {
-                let x = cur_x;
-                for y in cur_y + 1..max_y {
-                    if *grid.get(x, y).unwrap() {
-                        return Some((x, y));
-                    }
-                }
-            }
-            Direction::West => {
-                let y = cur_y;
-                for x in (0..cur_x).rev() {
-                    if *grid.get(x, y).unwrap() {
-                        return Some((x, y));
-                    }
-                }
-            }
+            Direction::North => obstacles
+                .iter()
+                .filter(|obs| obs.position.1 < cur_y)
+                .max_by_key(|obs| obs.position.1)
+                .cloned(),
+            Direction::East => obstacles
+                .iter()
+                .filter(|obs| obs.position.0 > cur_x)
+                .min_by_key(|obs| obs.position.0)
+                .cloned(),
+            Direction::South => obstacles
+                .iter()
+                .filter(|obs| obs.position.1 > cur_y)
+                .min_by_key(|obs| obs.position.1)
+                .cloned(),
+            Direction::West => obstacles
+                .iter()
+                .filter(|obs| obs.position.0 < cur_x)
+                .max_by_key(|obs| obs.position.0)
+                .cloned(),
         }
-
-        None
     }
 
     /// Patrols forward until encountering an obstacle or exiting the patrol area
@@ -119,6 +106,7 @@ impl Guard {
 */
 
 /// An object in the [PatrolArea] which the [Guard] may collide with
+#[derive(Copy, Clone)]
 struct Obstacle {
     position: (usize, usize),
 }
@@ -132,6 +120,8 @@ impl Obstacle {
 struct PatrolArea {
     guard: Guard,
     obstacles: Vec<Obstacle>,
+    width: usize,
+    height: usize,
 }
 
 impl FromStr for PatrolArea {
@@ -141,9 +131,11 @@ impl FromStr for PatrolArea {
         let mut guard_dir: Option<Direction> = None;
         let mut guard_pos: Option<(usize, usize)> = None;
         let mut width = 0;
+        let mut height = 0;
         let mut obstacles = Vec::new();
 
         for (y, line) in s.trim().lines().enumerate() {
+            height += 1;
             if width == 0 {
                 width = line.len();
             }
@@ -168,7 +160,12 @@ impl FromStr for PatrolArea {
 
         let guard = Guard::new(guard_pos.unwrap(), guard_dir.unwrap());
 
-        Ok(Self { guard, obstacles })
+        Ok(Self {
+            guard,
+            obstacles,
+            width,
+            height,
+        })
     }
 }
 
