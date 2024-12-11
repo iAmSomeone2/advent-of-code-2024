@@ -1,11 +1,14 @@
+use aoc_day::AoCDay;
 use std::collections::HashSet;
 use std::fmt::Display;
+use std::path::Path;
 use std::str::FromStr;
 
 type Position = (usize, usize);
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
 enum Direction {
+    #[default]
     North,
     East,
     South,
@@ -26,6 +29,7 @@ impl TryFrom<char> for Direction {
     }
 }
 
+#[derive(Default)]
 struct Guard {
     current_position: Position,
     direction: Direction,
@@ -149,7 +153,15 @@ impl Guard {
     /// `true` is returned if the [Guard] encountered an [Obstacle] and is still in the grid at the
     /// end of this move; `false`, otherwise.
     fn patrol(&mut self, obstacles: &[Obstacle], max_width: usize, max_height: usize) -> bool {
-        todo!()
+        let obstacle = self.cast_ray(obstacles);
+        self.move_to(&obstacle, max_width, max_height);
+
+        if obstacle.is_some() {
+            self.turn_right();
+            true
+        } else {
+            false
+        }
     }
 }
 
@@ -175,11 +187,19 @@ impl Obstacle {
     }
 }
 
+#[derive(Default)]
 pub struct PatrolArea {
     guard: Guard,
     obstacles: Vec<Obstacle>,
     width: usize,
     height: usize,
+}
+
+impl PatrolArea {
+    /// Steps the patrol one time; returning `true` if the [Guard] remains in the [PatrolArea]
+    pub fn step_patrol(&mut self) -> bool {
+        self.guard.patrol(&self.obstacles, self.width, self.height)
+    }
 }
 
 impl FromStr for PatrolArea {
@@ -233,6 +253,7 @@ enum CellContents {
     Empty,
     Obstacle,
     Guard,
+    Visited,
 }
 
 impl Display for PatrolArea {
@@ -244,13 +265,55 @@ impl Display for PatrolArea {
         for obs_pos in self.obstacles.iter().map(|obs| obs.position) {
             cell_contents[obs_pos.1][obs_pos.0] = CellContents::Obstacle;
         }
-
-        let mut display_buf = String::new();
-        for (y, row) in cell_contents.iter().enumerate() {
-            for (x, cell) in row.iter().enumerate() {}
+        for visited in &self.guard.distinct_positions {
+            cell_contents[visited.1][visited.0] = CellContents::Visited;
         }
 
-        write!(f, "")
+        let mut display_buf = String::new();
+        for row in &cell_contents {
+            for cell in row {
+                let c = match cell {
+                    CellContents::Empty => '░',
+                    CellContents::Obstacle => '█',
+                    CellContents::Guard => match self.guard.direction {
+                        Direction::North => '▲',
+                        Direction::East => '▶',
+                        Direction::South => '▼',
+                        Direction::West => '◀',
+                    },
+                    CellContents::Visited => '◈',
+                };
+                display_buf.push(c);
+            }
+            display_buf.push('\n');
+        }
+
+        write!(f, "{display_buf}")
+    }
+}
+
+#[derive(Default)]
+pub struct Day06 {
+    patrol_area: PatrolArea,
+}
+
+const EXAMPLE_INPUT: &str = include_str!("../example_input.txt");
+
+impl AoCDay for Day06 {
+    fn part1(&mut self) {
+        self.patrol_area.step_patrol();
+        print!("{}", self.patrol_area);
+    }
+
+    fn part2(&mut self) {
+        todo!()
+    }
+
+    fn load_input(&mut self, _path: &Path) -> anyhow::Result<()> {
+        let patrol_area = PatrolArea::from_str(EXAMPLE_INPUT).unwrap();
+
+        self.patrol_area = patrol_area;
+        Ok(())
     }
 }
 
@@ -258,11 +321,9 @@ impl Display for PatrolArea {
 mod tests {
     use super::*;
 
-    const INPUT: &str = include_str!("../example_input.txt");
-
     #[test]
     fn parse_patrol_area() {
-        let patrol_area = PatrolArea::from_str(INPUT);
+        let patrol_area = PatrolArea::from_str(EXAMPLE_INPUT);
 
         assert!(patrol_area.is_ok());
     }

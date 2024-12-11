@@ -48,12 +48,12 @@ impl Day01 {
 }
 
 impl AoCDay for Day01 {
-    fn part1(&self) {
+    fn part1(&mut self) {
         let result = self.total_distance();
         println!("Total distance: {}", result);
     }
 
-    fn part2(&self) {
+    fn part2(&mut self) {
         let result = self.similarity_score();
         println!("Similarity score: {}", result);
     }

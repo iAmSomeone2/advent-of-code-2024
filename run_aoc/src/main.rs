@@ -75,6 +75,7 @@ impl Day {
             Self::Two => Box::new(day02::Day02::default()),
             Self::Three => Box::new(day03::Day03::default()),
             Self::Five => Box::new(day05::Day05::default()),
+            Self::Six => Box::new(day06::Day06::default()),
             _ => panic!("Day not implemented yet"),
         }
     }
