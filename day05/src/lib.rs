@@ -139,12 +139,12 @@ impl Day05 {
 }
 
 impl AoCDay for Day05 {
-    fn part1(&self) {
+    fn part1(&mut self) {
         let sum = self.sum_middle_numbers_sorted();
         println!("Sum of middle numbers (sorted): {}", sum);
     }
 
-    fn part2(&self) {
+    fn part2(&mut self) {
         let sum = self.sum_middle_numbers_unsorted();
         println!("Sum of middle numbers (unsorted): {}", sum);
     }

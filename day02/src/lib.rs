@@ -120,12 +120,12 @@ impl Day02 {
 }
 
 impl AoCDay for Day02 {
-    fn part1(&self) {
+    fn part1(&mut self) {
         let result = self.count_safe_reports();
         println!("Safe reports: {}", result);
     }
 
-    fn part2(&self) {
+    fn part2(&mut self) {
         let result = self.count_safe_reports2();
         println!("Safe reports: {}", result);
     }

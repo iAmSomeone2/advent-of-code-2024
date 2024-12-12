@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 
@@ -43,7 +42,7 @@ mod tests {
 
     #[test]
     fn hash_match() {
-        let mut cross_match = Match::default();
+        let cross_match = Match::default();
         let mut hasher = DefaultHasher::new();
         cross_match.hash(&mut hasher);
 

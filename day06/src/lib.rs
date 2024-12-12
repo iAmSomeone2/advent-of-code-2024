@@ -3,6 +3,8 @@ use std::collections::HashSet;
 use std::fmt::Display;
 use std::path::Path;
 use std::str::FromStr;
+use std::thread;
+use std::time::Duration;
 
 type Position = (usize, usize);
 
@@ -260,13 +262,20 @@ impl Display for PatrolArea {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut cell_contents = vec![vec![CellContents::default(); self.width]; self.height];
 
-        let guard_pos = self.guard.current_position;
-        cell_contents[guard_pos.1][guard_pos.0] = CellContents::Guard;
+        let is_in_range =
+            |x, y| -> bool { (0..self.width).contains(&x) && (0..self.height).contains(&y) };
+
         for obs_pos in self.obstacles.iter().map(|obs| obs.position) {
             cell_contents[obs_pos.1][obs_pos.0] = CellContents::Obstacle;
         }
         for visited in &self.guard.distinct_positions {
-            cell_contents[visited.1][visited.0] = CellContents::Visited;
+            if is_in_range(visited.0, visited.1) {
+                cell_contents[visited.1][visited.0] = CellContents::Visited;
+            }
+        }
+        let guard_pos = self.guard.current_position;
+        if is_in_range(guard_pos.0, guard_pos.1) {
+            cell_contents[guard_pos.1][guard_pos.0] = CellContents::Guard;
         }
 
         let mut display_buf = String::new();
@@ -297,20 +306,46 @@ pub struct Day06 {
     patrol_area: PatrolArea,
 }
 
+impl Display for Day06 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let patrol_area = format!("{}", self.patrol_area);
+        let guard_info = format!(
+            "Guard at ({}, {})",
+            self.patrol_area.guard.current_position.0, self.patrol_area.guard.current_position.1
+        );
+
+        write!(f, "{}{}", patrol_area, guard_info)
+    }
+}
+
+impl Day06 {
+    fn distinct_patrol_position_count(&mut self) -> usize {
+        while self.patrol_area.step_patrol() {}
+        self.patrol_area.guard.distinct_positions.len() - 1
+    }
+}
+
 const EXAMPLE_INPUT: &str = include_str!("../example_input.txt");
 
 impl AoCDay for Day06 {
     fn part1(&mut self) {
-        self.patrol_area.step_patrol();
-        print!("{}", self.patrol_area);
+        // while self.patrol_area.step_patrol() {
+        //     println!("{}", self);
+        //     thread::sleep(Duration::from_millis(125));
+        // }
+        // println!("{}", self);
+        // let count = self.patrol_area.guard.distinct_positions.len();
+        let count = self.distinct_patrol_position_count();
+        println!("\nDistinct patrol positions: {}", count);
     }
 
     fn part2(&mut self) {
         todo!()
     }
 
-    fn load_input(&mut self, _path: &Path) -> anyhow::Result<()> {
-        let patrol_area = PatrolArea::from_str(EXAMPLE_INPUT).unwrap();
+    fn load_input(&mut self, path: &Path) -> anyhow::Result<()> {
+        let input = std::fs::read_to_string(path)?;
+        let patrol_area = PatrolArea::from_str(&input).unwrap();
 
         self.patrol_area = patrol_area;
         Ok(())
@@ -320,11 +355,27 @@ impl AoCDay for Day06 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::PathBuf;
+    use std::sync::LazyLock;
+
+    static EXAMPLE_PATH: LazyLock<PathBuf> =
+        LazyLock::new(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("example_input.txt"));
 
     #[test]
     fn parse_patrol_area() {
         let patrol_area = PatrolArea::from_str(EXAMPLE_INPUT);
 
         assert!(patrol_area.is_ok());
+    }
+
+    #[test]
+    fn part1() {
+        let mut day = Day06::default();
+        day.load_input(&EXAMPLE_PATH).unwrap();
+
+        let expected = 41;
+        let actual = day.distinct_patrol_position_count();
+
+        assert_eq!(expected, actual);
     }
 }

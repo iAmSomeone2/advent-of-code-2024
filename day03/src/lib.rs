@@ -75,12 +75,12 @@ impl Day03 {
 }
 
 impl AoCDay for Day03 {
-    fn part1(&self) {
+    fn part1(&mut self) {
         let sum = self.sum_mults();
         println!("Sum of mults: {sum}");
     }
 
-    fn part2(&self) {
+    fn part2(&mut self) {
         let sum = self.sum_mults2();
         println!("Sum of mults: {sum}");
     }
