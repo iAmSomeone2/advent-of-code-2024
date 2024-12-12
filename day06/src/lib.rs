@@ -3,8 +3,6 @@ use std::collections::HashSet;
 use std::fmt::Display;
 use std::path::Path;
 use std::str::FromStr;
-use std::thread;
-use std::time::Duration;
 
 type Position = (usize, usize);
 
