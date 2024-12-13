@@ -73,36 +73,20 @@ impl OpPermutator {
         Self {
             operators: vec![Operator::Add; size],
             permutation_max: Operator::COUNT.pow(size as u32),
-            permutation_count: 1,
+            permutation_count: 0,
             hold_idx: 0,
             inc_idx: 1,
         }
     }
 
-    fn next_permutation(&mut self) -> Vec<Operator> {
-        let inc_op = self.operators[self.inc_idx].next();
-        self.operators[self.inc_idx] = inc_op;
+    fn update_operator_next(&mut self, idx: usize) {
+        let updated_operator = self.operators[idx].next();
+        self.operators[idx] = updated_operator;
+    }
 
-        if self.inc_idx > self.hold_idx + 1 {
-            let dec_idx = self.inc_idx - 1;
-            let dec_op = self.operators[dec_idx].prev();
-            self.operators[dec_idx] = dec_op;
-        }
-
-        self.permutation_count += 1;
-        self.inc_idx += 1;
-        if self.inc_idx >= self.operators.len() {
-            let inc_op = self.operators[self.hold_idx].next();
-            self.operators[self.hold_idx] = inc_op;
-
-            self.hold_idx += 1;
-            if self.hold_idx >= self.operators.len() - 1 {
-                self.hold_idx = 0;
-            }
-            self.inc_idx = self.hold_idx + 1;
-        }
-
-        self.get_ops()
+    fn update_operator_prev(&mut self, idx: usize) {
+        let updated_operator = self.operators[idx].prev();
+        self.operators[idx] = updated_operator;
     }
 
     fn fully_mutated(&self) -> bool {
@@ -111,6 +95,46 @@ impl OpPermutator {
 
     fn get_ops(&self) -> Vec<Operator> {
         self.operators.clone()
+    }
+}
+
+impl Iterator for OpPermutator {
+    type Item = Vec<Operator>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.fully_mutated() {
+            return None;
+        } else if self.permutation_count == 0 {
+            // Return the initial permutation
+            self.permutation_count += 1;
+            return Some(self.operators.clone());
+        }
+
+        let ops_len = self.operators.len();
+
+        if self.hold_idx < ops_len - 1 {
+            if self.inc_idx >= ops_len {
+                // Decrement the final value and move on to the next set
+                self.update_operator_prev(ops_len - 1);
+                self.hold_idx += 1;
+                self.inc_idx = self.hold_idx + 1;
+            } else {
+                if self.inc_idx >= self.hold_idx + 1 {
+                    // Increment the value at the current 'inc_idx' and decrement the one behind it
+                    self.update_operator_prev(self.inc_idx - 1);
+                }
+                self.update_operator_next(self.inc_idx);
+                self.inc_idx += 1;
+            }
+        } else if self.hold_idx == ops_len {
+            return None;
+        } else {
+            self.update_operator_next(self.hold_idx);
+            self.hold_idx += 1;
+        }
+
+        self.permutation_count += 1;
+        Some(self.operators.clone())
     }
 }
 
@@ -132,15 +156,13 @@ impl FromStr for Equation {
 
 impl Equation {
     fn is_possible(&self) -> bool {
-        let mut ops = OpPermutator::new(self.inputs.len() - 1);
-        let mut is_possible = false;
+        let ops = OpPermutator::new(self.inputs.len() - 1);
 
         let mut result;
-        let mut op_permutation = ops.get_ops();
-        while !ops.fully_mutated() && !is_possible {
+        for permutation in ops {
             result = self.inputs[0];
             for (i, input) in self.inputs.iter().skip(1).enumerate() {
-                match op_permutation[i] {
+                match permutation[i] {
                     Operator::Add => {
                         result += *input;
                     }
@@ -150,11 +172,12 @@ impl Equation {
                 }
             }
 
-            is_possible = result == self.expected_result;
-            op_permutation = ops.next_permutation();
+            if result == self.expected_result {
+                return true;
+            }
         }
 
-        is_possible
+        false
     }
 }
 
@@ -165,21 +188,14 @@ mod tests {
 
     #[test]
     fn mutator_test() {
-        let mut ops = OpPermutator::new(3);
-        // println!("{ops}");
+        let ops = OpPermutator::new(2);
 
-        assert_eq!(ops.permutation_max, 8);
+        assert_eq!(ops.permutation_max, 4);
         let mut mutation_set = HashSet::with_capacity(ops.permutation_max as usize);
         mutation_set.insert(ops.get_ops());
 
-        for _ in 0..9 {
-            let mutation = ops.next_permutation();
-            // println!("{ops}");
-            mutation_set.insert(mutation);
-        }
-
-        for val in &mutation_set {
-            let ops_str: String = val.iter().fold(String::new(), |acc, op| {
+        let print_ops = |ops: &[Operator]| {
+            let ops_str = ops.iter().fold(String::new(), |acc, op| {
                 if acc.is_empty() {
                     format!("{op}")
                 } else {
@@ -187,9 +203,18 @@ mod tests {
                 }
             });
             println!("[{ops_str}]");
+        };
+
+        for permutation in ops {
+            print_ops(&permutation);
+            mutation_set.insert(permutation);
         }
 
-        assert_eq!(mutation_set.len(), 8)
+        // for val in &mutation_set {
+        //
+        // }
+
+        assert_eq!(mutation_set.len(), 4)
     }
 }
 
