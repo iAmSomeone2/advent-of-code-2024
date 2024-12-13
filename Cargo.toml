@@ -1,8 +1,10 @@
 [workspace]
 resolver = "2"
 
-members = [
-  "run_aoc",
-  "aoc_day",
-  "day01"
-, "day02", "day03", "day04", "day05", "day06"]
+members = ["run_aoc",
+    "aoc_day",
+    "day*"]
+
+
+[profile.dev]
+debug = "full"

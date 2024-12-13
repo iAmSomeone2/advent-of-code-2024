@@ -3,9 +3,6 @@ name = "day06"
 version = "0.1.0"
 edition = "2021"
 
-[profile.dev]
-debug = "full"
-
 [dependencies]
 anyhow = "1.0.94"
 aoc_day = { path = "../aoc_day" }
