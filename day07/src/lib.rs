@@ -116,21 +116,22 @@ impl Iterator for OpPermutator {
             if self.inc_idx >= ops_len {
                 // Decrement the final value and move on to the next set
                 self.update_operator_prev(ops_len - 1);
+                self.update_operator_prev(self.hold_idx);
                 self.hold_idx += 1;
                 self.inc_idx = self.hold_idx + 1;
             } else {
-                if self.inc_idx >= self.hold_idx + 1 {
+                if self.inc_idx > self.hold_idx + 1 {
                     // Increment the value at the current 'inc_idx' and decrement the one behind it
                     self.update_operator_prev(self.inc_idx - 1);
                 }
                 self.update_operator_next(self.inc_idx);
                 self.inc_idx += 1;
             }
-        } else if self.hold_idx == ops_len {
-            return None;
-        } else {
+        } else if self.hold_idx == ops_len - 1 {
             self.update_operator_next(self.hold_idx);
-            self.hold_idx += 1;
+        } else {
+            dbg!(&self.operators);
+            return None;
         }
 
         self.permutation_count += 1;
@@ -188,9 +189,9 @@ mod tests {
 
     #[test]
     fn mutator_test() {
-        let ops = OpPermutator::new(2);
+        let ops = OpPermutator::new(3);
 
-        assert_eq!(ops.permutation_max, 4);
+        assert_eq!(ops.permutation_max, 8);
         let mut mutation_set = HashSet::with_capacity(ops.permutation_max as usize);
         mutation_set.insert(ops.get_ops());
 
@@ -214,7 +215,7 @@ mod tests {
         //
         // }
 
-        assert_eq!(mutation_set.len(), 4)
+        assert_eq!(mutation_set.len(), 8)
     }
 }
 
