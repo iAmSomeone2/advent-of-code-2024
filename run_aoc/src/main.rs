@@ -21,6 +21,7 @@ enum Day {
     Four,
     Five,
     Six,
+    Nine,
 }
 
 impl TryFrom<u8> for Day {
@@ -33,6 +34,7 @@ impl TryFrom<u8> for Day {
             3 => Ok(Day::Three),
             5 => Ok(Day::Five),
             6 => Ok(Day::Six),
+            9 => Ok(Day::Nine),
             _ => Err(InvalidDayError(day)),
         }
     }
@@ -76,6 +78,7 @@ impl Day {
             Self::Three => Box::new(day03::Day03::default()),
             Self::Five => Box::new(day05::Day05::default()),
             Self::Six => Box::new(day06::Day06::default()),
+            Self::Nine => Box::new(day09::Day09::default()),
             _ => panic!("Day not implemented yet"),
         }
     }
