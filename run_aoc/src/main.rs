@@ -21,6 +21,8 @@ enum Day {
     Four,
     Five,
     Six,
+    Seven,
+    Eight,
     Nine,
 }
 
@@ -34,6 +36,8 @@ impl TryFrom<u8> for Day {
             3 => Ok(Day::Three),
             5 => Ok(Day::Five),
             6 => Ok(Day::Six),
+            7 => Ok(Day::Seven),
+            8 => Ok(Day::Eight),
             9 => Ok(Day::Nine),
             _ => Err(InvalidDayError(day)),
         }

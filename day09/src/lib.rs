@@ -75,7 +75,7 @@ impl FromStr for FileSystem {
 }
 
 impl FileSystem {
-    fn defrag_last_file_block(&mut self) {
+    fn fragment_last_file_block(&mut self) {
         if let Some(first_free_block_idx) = self.free_blocks.pop_front() {
             self.blocks[first_free_block_idx] = self.blocks[self.last_file_block];
             self.blocks[self.last_file_block] = Block::Free;
@@ -92,14 +92,14 @@ impl FileSystem {
         }
     }
 
-    fn is_defragmented(&self) -> bool {
+    fn is_fragmented(&self) -> bool {
         let free_range = self.last_file_block + 1..self.blocks.len();
         self.free_blocks.iter().all(|b| free_range.contains(b))
     }
 
-    fn defrag(&mut self) {
-        while !self.is_defragmented() {
-            self.defrag_last_file_block();
+    fn fragment(&mut self) {
+        while !self.is_fragmented() {
+            self.fragment_last_file_block();
         }
     }
 
@@ -122,7 +122,7 @@ pub struct Day09 {
 
 impl AoCDay for Day09 {
     fn part1(&mut self) {
-        self.fs.defrag();
+        self.fs.fragment();
         self.save_output().unwrap();
         let checksum = self.fs.checksum();
         println!("FS checksum: {}", checksum);
@@ -167,7 +167,7 @@ mod tests {
     #[test]
     fn test_defrag_last_file_block() {
         let mut fs = FileSystem::from_str(EXAMPLE_INPUT).unwrap();
-        fs.defrag_last_file_block();
+        fs.fragment_last_file_block();
 
         assert_eq!(fs.to_string(), "009..111...2...333.44.5555.6666.777.88889.");
     }
@@ -175,7 +175,7 @@ mod tests {
     #[test]
     fn test_defrag_example_input() {
         let mut fs = FileSystem::from_str(EXAMPLE_INPUT).unwrap();
-        fs.defrag();
+        fs.fragment();
 
         assert_eq!(fs.to_string(), "0099811188827773336446555566..............");
         assert_eq!(fs.checksum(), 1928);
